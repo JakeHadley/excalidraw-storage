@@ -1,18 +1,19 @@
 // Patches kiliandeca/excalidraw-storage-backend for Redis-backed Keyv.
-// The 2021 controllers push Keyv's parsed values into a Readable stream, which
-// requires strings/Buffers -> ERR_INVALID_ARG_TYPE crash on every GET.
-// Keyv/redis returns: objects (JSON bodies), plain strings, or Buffer wrappers
-// - either as objects ({type:"Buffer",data:[...]}) or as their JSON string
-// form. This rewrite emits the original payload in every case.
+// The 2021 controllers push Keyv's raw value into a Readable stream, which
+// requires strings/Buffers -> ERR_INVALID_ARG_TYPE crash on GET of JSON
+// bodies (plain objects).
+//
+// With keyv@4 + json-buffer, stored buffers come back as REAL Buffers
+// (not {type:"Buffer",...} wrappers) and JSON bodies come back as objects.
+// Emit the payload intact in every case:
+//   - Buffer      -> push as-is (original bytes; scenes/files stay byte-perfect)
+//   - string      -> push as-is
+//   - plain object -> JSON.stringify (recreates the original JSON body)
 const fs = require("fs");
 const files = ["scenes", "rooms", "files"];
 const REPL = [
-  // matches  stream.push(data);   in all three controllers
   [/stream\.push\(data\);/g,
-   'var __px = (typeof data==="string"? (data.startsWith(\'{"type":"Buffer"\')?Buffer.from(JSON.parse(data).data):data) : (data&&data.type==="Buffer")?Buffer.from(data.data):JSON.stringify(data)); console.log("PUSHX", typeof __px, String(__px).slice(0, 80)); stream.push(__px);'],
-  // debug dump of the raw keyv value for one GET
-  [/(const data = await this\.storageService\.get\(params\.id, this\.namespace\);)/,
-   '$1\n    console.log("KVDEBUG", typeof data, JSON.stringify(data).slice(0, 220));\n    console.log("SRCDBG", require("fs").readFileSync(__filename, "utf8").match(/stream\\.push[^\\n]*/g).join(" || ").slice(0, 500));'],
+   'stream.push(Buffer.isBuffer(data) ? data : (typeof data === "string" ? data : JSON.stringify(data)));'],
 ];
 for (const f of files) {
   const p = `/app/dist/${f}/${f}.controller.js`;
