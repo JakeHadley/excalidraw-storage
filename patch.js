@@ -10,6 +10,9 @@ const REPL = [
   // matches  stream.push(data);   in all three controllers
   [/stream\.push\(data\);/g,
    'stream.push(typeof data==="string"? (data.startsWith(\'{"type":"Buffer"\')?Buffer.from(JSON.parse(data).data):data) : (data&&data.type==="Buffer")?Buffer.from(data.data):JSON.stringify(data));'],
+  // debug dump of the raw keyv value for one GET
+  [/(const data = await this\.storageService\.get\(params\.id, this\.namespace\);)/,
+   '$1\n    console.log("KVDEBUG", JSON.stringify({t: typeof data, d: data && data.type, s: typeof data === "string" ? data.slice(0, 60) : null}));'],
 ];
 for (const f of files) {
   const p = `/app/dist/${f}/${f}.controller.js`;
