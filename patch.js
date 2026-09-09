@@ -9,7 +9,7 @@ const files = ["scenes", "rooms", "files"];
 const REPL = [
   // matches  stream.push(data);   in all three controllers
   [/stream\.push\(data\);/g,
-   'stream.push(typeof data==="string"? (data.startsWith(\'{"type":"Buffer"\')?Buffer.from(JSON.parse(data).data):data) : (data&&data.type==="Buffer")?Buffer.from(data.data):JSON.stringify(data));'],
+   'var __px = (typeof data==="string"? (data.startsWith(\'{"type":"Buffer"\')?Buffer.from(JSON.parse(data).data):data) : (data&&data.type==="Buffer")?Buffer.from(data.data):JSON.stringify(data)); console.log("PUSHX", typeof __px, String(__px).slice(0, 80)); stream.push(__px);'],
   // debug dump of the raw keyv value for one GET
   [/(const data = await this\.storageService\.get\(params\.id, this\.namespace\);)/,
    '$1\n    console.log("KVDEBUG", typeof data, JSON.stringify(data).slice(0, 220));\n    console.log("SRCDBG", require("fs").readFileSync(__filename, "utf8").match(/stream\\.push[^\\n]*/g).join(" || ").slice(0, 500));'],
