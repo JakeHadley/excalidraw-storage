@@ -12,7 +12,7 @@ const REPL = [
    'stream.push(typeof data==="string"? (data.startsWith(\'{"type":"Buffer"\')?Buffer.from(JSON.parse(data).data):data) : (data&&data.type==="Buffer")?Buffer.from(data.data):JSON.stringify(data));'],
   // debug dump of the raw keyv value for one GET
   [/(const data = await this\.storageService\.get\(params\.id, this\.namespace\);)/,
-   '$1\n    console.log("KVDEBUG", typeof data, JSON.stringify(data).slice(0, 220));'],
+   '$1\n    console.log("KVDEBUG", typeof data, JSON.stringify(data).slice(0, 220));\n    console.log("SRCDBG", require("fs").readFileSync(__filename, "utf8").match(/stream\\.push[^\\n]*/g).join(" || ").slice(0, 500));'],
 ];
 for (const f of files) {
   const p = `/app/dist/${f}/${f}.controller.js`;
